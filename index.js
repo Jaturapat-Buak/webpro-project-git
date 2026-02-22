@@ -1,11 +1,10 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
+const session = require("express-session");
 
 const app = express();
 const port = 3000;
-const session = require("express-session");
 
-// connect database
 let db = new sqlite3.Database("./hardwareStore.db", (err) => {
   if (err) return console.error(err.message);
   console.log("Connected to SQLite database.");
@@ -14,6 +13,7 @@ let db = new sqlite3.Database("./hardwareStore.db", (err) => {
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+
 app.use(
   session({
     secret: "secret-key",
@@ -22,8 +22,20 @@ app.use(
   }),
 );
 
+app.get("/", (req, res) => {
+  if (!req.session.user) return res.redirect("/login");
+
+  const role = req.session.user.role;
+
+  if (role === "admin") return res.redirect("/admin");
+  if (role === "warehousestaff") return res.redirect("/warehouse");
+  if (role === "salestaff") return res.redirect("/sales");
+
+  res.redirect("/login");
+});
+
 app.get("/login", (req, res) => {
-  res.sendFile(__dirname + "/login.html");
+  res.sendFile("login.html", { root: "public" });
 });
 
 app.post("/login", (req, res) => {
@@ -35,9 +47,9 @@ app.post("/login", (req, res) => {
     (err, user) => {
       if (err) return res.send("DB error");
       if (!user) return res.send("Login failed");
-      // เก็บ session
+
       req.session.user = user;
-      // redirect ตาม role
+
       if (user.role === "admin") return res.redirect("/admin");
       if (user.role === "warehousestaff") return res.redirect("/warehouse");
       if (user.role === "salestaff") return res.redirect("/sales");
@@ -58,25 +70,16 @@ function requireRole(role) {
   };
 }
 
-function requireAnyRole(roles) {
-  return (req, res, next) => {
-    if (!req.session.user) return res.redirect("/login");
-    if (!roles.includes(req.session.user.role))
-      return res.send("Access denied");
-    next();
-  };
-}
-
 app.get("/admin", requireRole("admin"), (req, res) => {
-  res.send("Admin dashboard");
+  res.render("admin-dashboard");
 });
 
 app.get("/warehouse", requireRole("warehousestaff"), (req, res) => {
-  res.send("Warehouse dashboard");
+  res.render("warehouse-dashboard");
 });
 
 app.get("/sales", requireRole("salestaff"), (req, res) => {
-  res.send("Sales dashboard");
+  res.render("sale-dashboard");
 });
 
 app.get("/logout", (req, res) => {
@@ -84,7 +87,7 @@ app.get("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-app.get("/manage", (req, res) => {
+app.get("/manage", requireLogin, (req, res) => {
   const search = req.query.search || "";
 
   let sql = `
@@ -112,7 +115,18 @@ app.get("/manage", (req, res) => {
 
   db.all(sql, params, (err, rows) => {
     if (err) return console.log(err.message);
-    res.render("show", { data: rows, search });
+    res.render("manageproduct", { data: rows, search });
+  });
+});
+
+app.get("/manageusers", requireLogin, (req, res) => {
+  let sql = `
+    SELECT * FROM users
+  `;
+  db.all(sql, [], (err, rows) => {
+    // ⭐ ใส่ [] แทน params
+    if (err) return console.log(err.message);
+    res.render("manageusers", { data: rows });
   });
 });
 
