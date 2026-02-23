@@ -9,6 +9,36 @@
     <h1>Edit Product</h1>
 
     <form method="POST" action="/manageproduct/<%= product.CATEGORY_ID %>/<%= product.PRODUCT_ID %>">
+        <p>Category Name</p>
+        <select name="category_name">
+            <option value="CPU" 
+                <%= product.CATEGORY_NAME === 'CPU' ? 'selected' : '' %>>
+                CPU
+            </option>
+
+            <option value="Video Card" 
+                <%= product.CATEGORY_NAME === 'Video Card' ? 'selected' : '' %>>
+                Video Card
+            </option>
+
+            <option value="Mother Board" 
+                <%= product.CATEGORY_NAME === 'Mother Board' ? 'selected' : '' %>>
+                Mother Board
+            </option>
+
+            <option value="Storage" 
+                <%= product.CATEGORY_NAME === 'Storage' ? 'selected' : '' %>>
+                Storage
+            </option>
+        </select>
+
+        <p>Product ID</p>
+        <input 
+            type="text" 
+            name="product_ID"
+            value="<%= product.PRODUCT_ID %>" 
+            required
+        >
 
         <p>Product Name</p>
         <input 
@@ -18,13 +48,7 @@
             required
         >
 
-        <p>Category Name</p>
-        <input 
-            type="text" 
-            name="category_name"
-            value="<%= product.CATEGORY_NAME %>" 
-            required
-        >
+
         <p>Price</p>
         <input 
             type="number" 

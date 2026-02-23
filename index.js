@@ -22,6 +22,8 @@ app.use(
   }),
 );
 
+// ---------------------------- Login ------------------------------------
+
 app.get("/", (req, res) => {
   if (!req.session.user) return res.redirect("/login");
 
@@ -87,6 +89,8 @@ app.get("/logout", (req, res) => {
   res.redirect("/login");
 });
 
+// ---------------------------- Product ------------------------------------
+
 app.get("/manageproduct", requireLogin, (req, res) => {
   const search = req.query.search || "";
 
@@ -109,11 +113,146 @@ app.get("/manageproduct", requireLogin, (req, res) => {
     res.render("manageproduct", {
       data: rows,
       search,
-      role: req.session.user.role
+      role: req.session.user.role,
     });
   });
 });
 
+app.get("/addproduct", requireLogin, (req, res) => {
+  res.sendFile("addproduct.html", { root: "public" });
+});
+
+app.post("/addproduct", requireLogin, (req, res) => {
+  const { category_name, product_id, product_name, price, quantity } = req.body;
+
+  const categoryMap = {
+    CPU: 1,
+    "Video Card": 2,
+    "Mother Board": 4,
+    Storage: 5,
+  };
+
+  const category_id = categoryMap[category_name];
+  if (!category_id) return res.send("Invalid category");
+
+  db.get(
+    "SELECT * FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
+    [category_id, product_id],
+    (err, existing) => {
+      if (err) return res.send("DB error");
+      if (existing)
+        return res.send("Product ID already exists in this category");
+
+      db.run(
+        `
+        INSERT INTO hardwareStores
+        (CATEGORY_ID, CATEGORY_NAME, PRODUCT_ID, PRODUCT_NAME, LIST_PRICE, QUANTITY)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [category_id, category_name, product_id, product_name, price, quantity],
+        (err) => {
+          if (err) return res.send("Insert failed");
+          res.redirect("/manageproduct");
+        },
+      );
+    },
+  );
+});
+
+app.get("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
+  const { categoryId, productId } = req.params;
+
+  db.get(
+    "SELECT * FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
+    [categoryId, productId],
+    (err, product) => {
+      if (err) return res.send("DB error");
+      if (!product) return res.send("Product not found");
+
+      res.render("editproduct", { product: product });
+    },
+  );
+});
+
+app.post("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
+  const { categoryId, productId: oldProductId } = req.params;
+
+  const {
+    category_name,
+    product_ID: newProductId,
+    product_name,
+    price,
+    quantity,
+  } = req.body;
+
+  const categoryMap = {
+    CPU: 1,
+    "Video Card": 2,
+    "Mother Board": 4,
+    Storage: 5,
+  };
+
+  const newCategoryId = categoryMap[category_name];
+  if (!newCategoryId) return res.send("Invalid category");
+
+  db.get(
+    "SELECT * FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
+    [newCategoryId, newProductId],
+    (err, existing) => {
+      if (err) return res.send("DB error");
+
+      if (
+        existing &&
+        (oldProductId != newProductId || categoryId != newCategoryId)
+      ) {
+        return res.send("Product ID already exists in this category");
+      }
+
+      db.run(
+        `
+        UPDATE hardwareStores
+        SET
+          PRODUCT_ID = ?,      -- 🔥 update id ใหม่
+          PRODUCT_NAME = ?,
+          CATEGORY_NAME = ?,
+          CATEGORY_ID = ?,
+          LIST_PRICE = ?,
+          QUANTITY = ?
+        WHERE CATEGORY_ID = ? AND PRODUCT_ID = ?
+      `,
+        [
+          newProductId,
+          product_name,
+          category_name,
+          newCategoryId,
+          price,
+          quantity,
+          categoryId, // old category
+          oldProductId, // old product id
+        ],
+        (err) => {
+          if (err) return res.send("Update failed");
+          res.redirect("/manageproduct");
+        },
+      );
+    },
+  );
+});
+
+app.get("/removeproduct/:categoryId/:productId", requireLogin, (req, res) => {
+  const { categoryId, productId } = req.params;
+
+  db.run(
+    "DELETE FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
+    [categoryId, productId],
+    (err) => {
+      if (err) return res.send("Delete failed");
+      res.redirect("/manageproduct");
+    },
+  );
+});
+
+// ---------------------------- Users ------------------------------------
 app.get("/manageusers", requireLogin, (req, res) => {
   let sql = `
     SELECT * FROM users
@@ -139,52 +278,13 @@ app.post("/manageuser/:id", requireLogin, (req, res) => {
   const id = req.params.id;
   const { role } = req.body;
 
-  db.run(
-    "UPDATE users SET role=? WHERE id=?",
-    [role, id],
-    (err) => {
-      if (err) return res.send("Update failed");
-      res.redirect("/manageusers");
-    }
-  );
-});
-
-app.get("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
-  const { categoryId, productId } = req.params;
-
-  db.get(
-    "SELECT * FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
-    [categoryId, productId],
-    (err, product) => {
-      if (err) return res.send("DB error");
-      if (!product) return res.send("Product not found");
-
-      res.render("editproduct", { product: product }); // ✅ แก้ตรงนี้
-    }
-  );
-});
-
-app.post("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
-
-  const { categoryId, productId } = req.params;
-  const { product_name, category_name, price, quantity } = req.body;
-
-  db.run(`
-    UPDATE hardwareStores
-    SET
-      PRODUCT_NAME = ?,
-      CATEGORY_NAME = ?,
-      LIST_PRICE = ?,
-      QUANTITY = ?
-    WHERE CATEGORY_ID = ? AND PRODUCT_ID = ?
-  `,
-  [product_name, category_name, price, quantity, categoryId, productId],
-  (err) => {
+  db.run("UPDATE users SET role=? WHERE id=?", [role, id], (err) => {
     if (err) return res.send("Update failed");
-    res.redirect("/manageproduct");
+    res.redirect("/manageusers");
   });
-
 });
+
+// -----------------------------------------------------------------------------
 
 app.listen(port, () => {
   console.log("Server started at http://localhost:3000");
