@@ -7,8 +7,12 @@
 </head>
 
 <body>
-    <a href="" class="btn btn-info btn-sm"> ← Back</a>
-    <form method="GET" action="/" class="mb-3">
+    <a href="/<%= role === 'admin' ? 'admin'
+            : role === 'warehousestaff' ? 'warehouse'
+            : 'sales' %>">
+    ← Back
+    </a>
+    <form method="GET" action="/manageproduct" class="mb-3">
         <div class="input-group">
             <input 
                 type="text" 
@@ -40,7 +44,7 @@
                 <td><%= item.LIST_PRICE %></td>
                 <td><%= item.QUANTITY %></td>
                 <td><a href="/detail/<%= item.id %>" class="btn btn-info btn-sm">Detail</a>
-                <a href="/manage/<%= item.id %>" class="btn btn-info btn-sm">Manage</a></td>
+                <a href="/manageproduct/<%= item.CATEGORY_ID %>/<%= item.PRODUCT_ID %>" class="btn btn-info btn-sm">Manage</a>
             </tr>
         <% }) %>
 

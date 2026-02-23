@@ -87,17 +87,11 @@ app.get("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-app.get("/manage", requireLogin, (req, res) => {
+app.get("/manageproduct", requireLogin, (req, res) => {
   const search = req.query.search || "";
 
   let sql = `
-    SELECT 
-      CATEGORY_ID,
-      CATEGORY_NAME,
-      PRODUCT_ID,
-      PRODUCT_NAME,
-      SUM(QUANTITY) AS QUANTITY,
-      AVG(LIST_PRICE) AS LIST_PRICE
+    SELECT *
     FROM hardwareStores
   `;
 
@@ -108,14 +102,15 @@ app.get("/manage", requireLogin, (req, res) => {
     params.push("%" + search + "%");
   }
 
-  sql += `
-    GROUP BY CATEGORY_ID, CATEGORY_NAME, PRODUCT_ID, PRODUCT_NAME
-    ORDER BY CATEGORY_ID ASC, PRODUCT_ID ASC
-  `;
+  sql += " ORDER BY CATEGORY_ID, PRODUCT_ID";
 
   db.all(sql, params, (err, rows) => {
     if (err) return console.log(err.message);
-    res.render("manageproduct", { data: rows, search });
+    res.render("manageproduct", {
+      data: rows,
+      search,
+      role: req.session.user.role
+    });
   });
 });
 
@@ -124,10 +119,71 @@ app.get("/manageusers", requireLogin, (req, res) => {
     SELECT * FROM users
   `;
   db.all(sql, [], (err, rows) => {
-    // ⭐ ใส่ [] แทน params
     if (err) return console.log(err.message);
     res.render("manageusers", { data: rows });
   });
+});
+
+app.get("/manageuser/:id", requireLogin, (req, res) => {
+  const id = req.params.id;
+
+  db.get("SELECT * FROM users WHERE id=?", [id], (err, user) => {
+    if (err) return res.send("DB error");
+    if (!user) return res.send("User not found");
+
+    res.render("edituser", { user });
+  });
+});
+
+app.post("/manageuser/:id", requireLogin, (req, res) => {
+  const id = req.params.id;
+  const { role } = req.body;
+
+  db.run(
+    "UPDATE users SET role=? WHERE id=?",
+    [role, id],
+    (err) => {
+      if (err) return res.send("Update failed");
+      res.redirect("/manageusers");
+    }
+  );
+});
+
+app.get("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
+  const { categoryId, productId } = req.params;
+
+  db.get(
+    "SELECT * FROM hardwareStores WHERE CATEGORY_ID=? AND PRODUCT_ID=?",
+    [categoryId, productId],
+    (err, product) => {
+      if (err) return res.send("DB error");
+      if (!product) return res.send("Product not found");
+
+      res.render("editproduct", { product: product }); // ✅ แก้ตรงนี้
+    }
+  );
+});
+
+app.post("/manageproduct/:categoryId/:productId", requireLogin, (req, res) => {
+
+  const { categoryId, productId } = req.params;
+  const { product_name, category_name, price, quantity } = req.body;
+
+  db.run(`
+    UPDATE hardwareStores
+    SET
+      PRODUCT_NAME = ?,
+      CATEGORY_NAME = ?,
+      LIST_PRICE = ?,
+      QUANTITY = ?
+    WHERE CATEGORY_ID = ? AND PRODUCT_ID = ?
+  `,
+  [product_name, category_name, price, quantity, categoryId, productId],
+  (err) => {
+    if (err) return res.send("Update failed");
+    res.redirect("/manageproduct");
+  });
+
 });
 
 app.listen(port, () => {

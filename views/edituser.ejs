@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Edit Role</h1>
+
+    <p>Username: <%= user.username %></p>
+
+    <form method="POST">
+        <label>Role</label>
+        <select name="role">
+            <option value="admin" <%= user.role === "admin" ? "selected" : "" %>>Admin</option>
+            <option value="warehousestaff" <%= user.role === "warehousestaff" ? "selected" : "" %>>Warehouse Staff</option>
+            <option value="salestaff" <%= user.role === "salestaff" ? "selected" : "" %>>Sales Staff</option>
+        </select>
+
+        <br><br>
+        <button type="submit">Save</button>
+    </form>
+
+    <br>
+    <a href="/manageusers">Back</a>
+</body>
+</html>
