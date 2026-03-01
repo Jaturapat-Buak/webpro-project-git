@@ -164,3 +164,22 @@ body {
         width: calc(100% - var(--sidebar-collapsed-width)) !important;
     }
 }
+
+.dropdown-menu {
+    border-radius: 8px;
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-color); 
+}
+
+.dropdown-item i {
+    font-size: 1.1rem;
+    vertical-align: middle;
+}

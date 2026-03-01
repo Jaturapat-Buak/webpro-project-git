@@ -89,19 +89,76 @@ app.post('/add-product', (req, res) => {
     });
 });
 
-app.post('/delete-products', (req, res) => {
-    const { ids } = req.body; 
-    if (!ids || ids.length === 0) return res.status(400).json({ success: false, message: "ไม่มีข้อมูลที่ต้องการลบ" });
+app.get('/product/view/:id', (req, res) => {
+    const productId = req.params.id;
+    const sql = `
+        SELECT p.*, c.category_name, COALESCE(s.warehouse_qty, 0) AS stock 
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN stock s ON p.product_id = s.product_id
+        WHERE p.product_id = ?
+    `;
+    
+    db.get(sql, [productId], (err, product) => {
+        if (err || !product) return res.status(404).send("ไม่พบข้อมูลสินค้า");
+        res.render('view-product', { 
+            title: 'รายละเอียดสินค้า', 
+            product: product, 
+            currentRoute: '/products' 
+        });
+    });
+});
 
-    const placeholders = ids.map(() => '?').join(',');
+app.get('/product/edit/:id', (req, res) => {
+    const productId = req.params.id;
+    const sql = `
+        SELECT p.*, COALESCE(s.warehouse_qty, 0) AS stock 
+        FROM products p
+        LEFT JOIN stock s ON p.product_id = s.product_id
+        WHERE p.product_id = ?
+    `;
+    
+    db.get(sql, [productId], (err, product) => {
+        if (err || !product) return res.status(404).send("ไม่พบข้อมูลสินค้า");
+        
+        db.all("SELECT category_id, category_name FROM categories ORDER BY category_name ASC", [], (err, categories) => {
+            res.render('edit-product', { 
+                title: 'แก้ไขข้อมูลสินค้า', 
+                product: product, 
+                categories: categories,
+                currentRoute: '/products' 
+            });
+        });
+    });
+});
 
-    db.run(`DELETE FROM stock WHERE product_id IN (${placeholders})`, ids, function(err) {
-        if (err) return res.status(500).json({ success: false, message: "ลบสต็อกไม่สำเร็จ" });
+app.post('/edit-product/:id', (req, res) => {
+    const productId = req.params.id;
+    const { name, category_id, stock, price, description } = req.body;
+    
+    const updateProductSql = `UPDATE products SET product_name = ?, category_id = ?, price = ?, description = ? WHERE product_id = ?`;
+    db.run(updateProductSql, [name, category_id, price, description || null, productId], function(err) {
+        if (err) return res.status(500).send("อัปเดตข้อมูลสินค้าไม่สำเร็จ");
+        
+        const updateStockSql = `UPDATE stock SET warehouse_qty = ? WHERE product_id = ?`;
+        db.run(updateStockSql, [stock, productId], function(err) {
+            if (err) console.error("อัปเดตสต็อกไม่สำเร็จ:", err.message);
+            res.redirect('/products');
+        });
+    });
+});
 
-        db.run(`DELETE FROM products WHERE product_id IN (${placeholders})`, ids, function(err) {
-            if (err) return res.status(500).json({ success: false, message: "ลบสินค้าไม่สำเร็จ" });
-            
-            res.json({ success: true, message: "ลบข้อมูลเรียบร้อยแล้ว" });
+app.post('/delete-product', (req, res) => {
+    const { productId } = req.body;
+    
+    if (!productId) return res.status(400).send("ไม่พบรหัสสินค้า");
+
+    db.run(`DELETE FROM stock WHERE product_id = ?`, [productId], function(err) {
+        if (err) return res.status(500).send("ลบข้อมูลสต็อกไม่สำเร็จ");
+
+        db.run(`DELETE FROM products WHERE product_id = ?`, [productId], function(err) {
+            if (err) return res.status(500).send("ลบข้อมูลสินค้าไม่สำเร็จ");
+            res.redirect('/products');
         });
     });
 });

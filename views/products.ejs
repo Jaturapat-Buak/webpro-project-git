@@ -46,9 +46,6 @@
                 <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold">รายการสินค้าในคลัง</h5>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-danger" id="deleteBtn" disabled>
-                            <i class="bi bi-trash"></i> ลบที่เลือก (<span id="selectedCount">0</span>)
-                        </button>
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
                             <i class="bi bi-plus-lg"></i> เพิ่มสินค้า
                         </button>
@@ -60,13 +57,13 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light text-muted sticky-top">
                                 <tr>
-                                    <th class="text-center" width="5%"><input type="checkbox" id="selectAll" class="form-check-input"></th>
                                     <th>รหัสสินค้า (ID)</th>
                                     <th>ชื่อสินค้า</th>
                                     <th>หมวดหมู่</th>
                                     <th class="text-center">จำนวนคงเหลือ</th>
                                     <th>สถานะสต็อก</th>
                                     <th class="text-end px-4">ราคา (บาท)</th>
+                                    <th class="text-center">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,9 +73,6 @@
 
                                 <% products.forEach(p => { %>
                                     <tr>
-                                        <td class="text-center">
-                                            <input type="checkbox" class="form-check-input product-checkbox" value="<%= p.product_id %>">
-                                        </td>
                                         <td class="text-muted">#<%= p.product_id %></td>
                                         <td class="fw-bold text-primary"><%= p.product_name %></td>
                                         <td><span class="badge bg-secondary"><%= p.category_name || 'ไม่มีหมวดหมู่' %></span></td>
@@ -93,6 +87,34 @@
                                             <% } %>
                                         </td>
                                         <td class="text-end px-4">฿<%= (p.price || 0).toLocaleString() %></td>
+                                        <td class="text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light rounded-circle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                    <li>
+                                                        <a class="dropdown-item py-2" href="/product/view/<%= p.product_id %>">
+                                                            <i class="bi bi-eye text-info me-2"></i> ดูรายละเอียด
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2" href="/product/edit/<%= p.product_id %>">
+                                                            <i class="bi bi-pencil-square text-warning me-2"></i> แก้ไขข้อมูล
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="/delete-product" method="POST" class="d-inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?');">
+                                                            <input type="hidden" name="productId" value="<%= p.product_id %>">
+                                                            <button type="submit" class="dropdown-item py-2 text-danger">
+                                                                <i class="bi bi-trash text-danger me-2"></i> ลบข้อมูล
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
                                     </tr>
                                 <% }) %>
                             </tbody>
@@ -152,6 +174,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/script.js"></script>
-    <script src="/js/products.js"></script>
 </body>
 </html>
