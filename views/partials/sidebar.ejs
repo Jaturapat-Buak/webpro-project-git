@@ -1,8 +1,14 @@
 <nav id="sidebar" class="sidebar">
     <div class="brand-logo">
-        <i class="bi bi-box-seam text-info fs-3"></i>
-        <span class="brand-text">Gear Hub</span>
+        <div class="logo-wrapper">
+            <i class="bi bi-box-seam text-info fs-3"></i>
+            <span class="brand-text">Gear Hub</span>
+        </div>
+        <button id="toggle-sidebar" class="sidebar-toggle">
+            <i class="bi bi-list"></i>
+        </button>
     </div>
+    
     <ul class="sidebar-menu mt-3">
         <li class="<%= currentRoute === '/' ? 'active' : '' %>">
             <a href="/"><i class="bi bi-grid-1x2"></i> <span class="menu-text">แดชบอร์ด</span></a>
