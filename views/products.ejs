@@ -62,7 +62,7 @@
                                     <th>หมวดหมู่</th>
                                     <th class="text-center">จำนวนคงเหลือ</th>
                                     <th>สถานะสต็อก</th>
-                                    <th class="text-end px-4">ราคา (บาท)</th>
+                                    <th class="text-end px-4">ราคา</th>
                                     <th class="text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -86,7 +86,7 @@
                                                 <span class="badge bg-danger">หมดสต็อก</span>
                                             <% } %>
                                         </td>
-                                        <td class="text-end px-4">฿<%= (p.price || 0).toLocaleString() %></td>
+                                        <td class="text-end px-4">$<%= (p.price || 0).toLocaleString() %></td>
                                         <td class="text-center">
                                             <div class="dropdown">
                                                 <button class="btn btn-sm btn-light rounded-circle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window">
@@ -158,7 +158,7 @@
                                 <input type="number" name="stock" class="form-control" value="0" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-muted small">ราคา (บาท) <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold text-muted small">ราคา<span class="text-danger">*</span></label>
                                 <input type="number" name="price" class="form-control" step="0.01" min="0" required>
                             </div>
                         </div>
