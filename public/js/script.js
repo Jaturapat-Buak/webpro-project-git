@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const sidebar = document.getElementById("sidebar");
     const mainContent = document.getElementById("main-content");
 
+    // ปลดล็อกแอนิเมชันคืน
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (disableTransitionStyle.parentNode) {
@@ -57,3 +58,38 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
+
+let teleportedMenu = null;
+let originalParent = null;
+
+document.addEventListener('show.bs.dropdown', function (event) {
+    const button = event.target;
+    const menu = button.nextElementSibling;
+
+    if (button.closest('.table-responsive') && menu && menu.classList.contains('dropdown-menu')) {
+        teleportedMenu = menu;
+        originalParent = menu.parentNode;
+
+        document.body.appendChild(menu);
+
+        menu.style.zIndex = '9999';
+    }
+});
+
+document.addEventListener('hide.bs.dropdown', function (event) {
+    if (teleportedMenu && originalParent) {
+        originalParent.appendChild(teleportedMenu);
+        teleportedMenu = null;
+        originalParent = null;
+    }
+});
+
+window.addEventListener('scroll', function() {
+    if (teleportedMenu) {
+        const openBtn = document.querySelector('.dropdown-toggle[aria-expanded="true"]');
+        if (openBtn) {
+            const dpInstance = bootstrap.Dropdown.getInstance(openBtn);
+            if (dpInstance) dpInstance.hide();
+        }
+    }
+}, true);

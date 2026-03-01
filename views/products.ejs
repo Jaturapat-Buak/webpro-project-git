@@ -53,7 +53,7 @@
                 </div>
                 
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="table-responsive" style="max-height: 60vh;">
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light text-muted sticky-top">
                                 <tr>
@@ -89,7 +89,7 @@
                                         <td class="text-end px-4">฿<%= (p.price || 0).toLocaleString() %></td>
                                         <td class="text-center">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-light rounded-circle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light rounded-circle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window">
                                                     <i class="bi bi-three-dots-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
