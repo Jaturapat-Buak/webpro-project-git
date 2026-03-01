@@ -1,0 +1,29 @@
+<nav id="sidebar" class="sidebar">
+    <div class="brand-logo">
+        <i class="bi bi-box-seam text-info fs-3"></i>
+        <span class="brand-text">Gear Hub</span>
+    </div>
+    <ul class="sidebar-menu mt-3">
+        <li class="<%= currentRoute === '/' ? 'active' : '' %>">
+            <a href="/"><i class="bi bi-grid-1x2"></i> <span class="menu-text">แดชบอร์ด</span></a>
+        </li>
+        <li class="<%= currentRoute === '/products' ? 'active' : '' %>">
+            <a href="/products"><i class="bi bi-box"></i> <span class="menu-text">สินค้าทั้งหมด</span></a>
+        </li>
+        <li>
+            <a href="/receive"><i class="bi bi-box-arrow-in-down"></i> <span class="menu-text">รับสินค้าเข้า</span></a>
+        </li>
+        <li>
+            <a href="/dispatch"><i class="bi bi-box-arrow-up"></i> <span class="menu-text">เบิกสินค้า</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="bi bi-bar-chart"></i> <span class="menu-text">รายงาน</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="bi bi-people"></i> <span class="menu-text">จัดการผู้ใช้</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="bi bi-gear"></i> <span class="menu-text">ตั้งค่า</span></a>
+        </li>
+    </ul>
+</nav>
