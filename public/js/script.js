@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const sidebar = document.getElementById("sidebar");
     const mainContent = document.getElementById("main-content");
 
-    // ปลดล็อกแอนิเมชันคืน
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             if (disableTransitionStyle.parentNode) {
