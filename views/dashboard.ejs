@@ -56,7 +56,6 @@
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>ID</th>
                                         <th>วัน-เวลา</th>
                                         <th>รหัสสินค้า</th>
                                         <th>สินค้า</th>
@@ -68,21 +67,33 @@
                                     <% if (typeof logs !== 'undefined' && logs.length > 0) { %>
                                         <% logs.forEach(log => { %>
                                             <tr>
-                                                <td><%= log.transaction_id %></td>
                                                 <td><%= log.transaction_date %></td>
                                                 <td>#<%= log.product_id %></td>
-                                                <td><%= log.product_name || 'สินค้าถูกลบ (ID:'+log.product_id+')' %></td>
+                                                <td><%= log.product_name %></td>
                                                 <td>
                                                     <% 
                                                         let badgeClass = 'bg-secondary';
                                                         let typeText = 'ไม่ระบุ';
-                                                        if (log.transaction_type === 'receive') { badgeClass = 'bg-success'; typeText = 'รับเข้า'; }
-                                                        else if (log.transaction_type === 'issue') { badgeClass = 'bg-danger'; typeText = 'เบิกออก/ลบ'; }
-                                                        else if (log.transaction_type === 'adjust') { badgeClass = 'bg-warning text-dark'; typeText = 'ปรับปรุง'; }
+                                                        if (log.transaction_type === 'add') {
+                                                            badgeClass = 'bg-success'; 
+                                                            typeText = 'เพิ่มใหม่'; 
+                                                        } else if (log.transaction_type === 'receive') {
+                                                            badgeClass = 'bg-primary'; 
+                                                            typeText = 'รับเข้า'; 
+                                                        } else if (log.transaction_type === 'dispatch') {
+                                                            badgeClass = 'bg-info text-dark'; 
+                                                            typeText = 'เบิกออก'; 
+                                                        } else if (log.transaction_type === 'issue') {
+                                                            badgeClass = 'bg-danger'; 
+                                                            typeText = 'ลบ'; 
+                                                        } else if (log.transaction_type === 'adjust') {
+                                                            badgeClass = 'bg-warning text-dark'; 
+                                                            typeText = 'แก้ไข'; 
+                                                        }
                                                     %>
                                                     <span class="badge <%= badgeClass %>">
                                                         <%= typeText %>
-                                                    </span> 
+                                                    </span>
                                                 </td>
                                                 <td><%= log.quantity %></td>
                                             </tr>
@@ -110,7 +121,7 @@
 
     <script>
         const chartData = <%- JSON.stringify(catStats) %>;
-        const totalProducts = <%= stats.total %>;
+        const totalInventory = <%= typeof totalInventory !== 'undefined' ? totalInventory : 0 %>;
     </script>
     <script src="/js/script.js"></script>
     <script src="/js/chart.js"></script>

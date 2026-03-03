@@ -18,7 +18,7 @@
                     <h5 class="fw-bold mb-0"><i class="bi bi-pencil-square text-warning me-2"></i> แก้ไขข้อมูลสินค้า #<%= product.product_id %></h5>
                 </div>
                 <div class="card-body p-4 pt-0">
-                    <form action="/edit-product/<%= product.product_id %>" method="POST">
+                    <form action="/edit-product/<%= product.product_id %>" method="POST" autocomplete="off">
                         <div class="mb-3">
                             <label class="form-label fw-bold text-muted small">ชื่อสินค้า <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" value="<%= product.product_name %>" required>
