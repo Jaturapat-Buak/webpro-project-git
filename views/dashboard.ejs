@@ -95,7 +95,7 @@
                                                         <%= typeText %>
                                                     </span>
                                                 </td>
-                                                <td><%= log.quantity %></td>
+                                                <td><%= log.quantity %> ชิ้น</td>
                                             </tr>
                                         <% }) %>
                                     <% } else { %>
@@ -109,10 +109,11 @@
 
                 <div class="col-lg-4">
                     <div class="card border-0 shadow-sm p-4 h-100">
-                        <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart-fill"></i> สัดส่วนประเภทสินค้า</h5>
-                        <div style="position: relative; height: 300px;">
+                        <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-steps"></i> สัดส่วนสต็อกรวม</h5>
+                        <div style="position: relative; height: 70px;"> 
                             <canvas id="categoryChart"></canvas>
                         </div>
+                        <div id="custom-legend" class="mt-4"></div>
                     </div>
                 </div>
             </div>
@@ -124,6 +125,6 @@
         const totalInventory = <%= typeof totalInventory !== 'undefined' ? totalInventory : 0 %>;
     </script>
     <script src="/js/script.js"></script>
-    <script src="/js/chart.js"></script>
+    <script src="/js/dashboard-chart.js"></script>
 </body>
 </html>

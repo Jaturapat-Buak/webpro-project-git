@@ -211,4 +211,46 @@ app.post('/dispatch-stock', (req, res) => {
     });
 });
 
+// --- หน้า Report (สรุปข้อมูล) ---
+app.get('/report', (req, res) => {
+    const queries = {
+        totalValue: `SELECT SUM(p.price * s.warehouse_qty) as value 
+                     FROM products p JOIN stock s ON p.product_id = s.product_id`,
+        totalInventory: "SELECT SUM(warehouse_qty) as total FROM stock",
+        totalLogs: "SELECT COUNT(*) as count FROM stock_transactions",
+        barChart: `SELECT c.category_name, SUM(s.warehouse_qty) as qty 
+                   FROM categories c 
+                   LEFT JOIN products p ON c.category_id = p.category_id 
+                   LEFT JOIN stock s ON p.product_id = s.product_id 
+                   GROUP BY c.category_id`,
+        pieChart: `SELECT c.category_name, SUM(s.warehouse_qty) as qty 
+                   FROM categories c 
+                   LEFT JOIN products p ON c.category_id = p.category_id 
+                   LEFT JOIN stock s ON p.product_id = s.product_id 
+                   GROUP BY c.category_id`
+    };
+
+    db.get(queries.totalValue, (err, val) => {
+        db.get(queries.totalInventory, (err, inv) => {
+            db.get(queries.totalLogs, (err, logs) => {
+                db.all(queries.barChart, (err, barData) => {
+                    db.all(queries.pieChart, (err, pieData) => {
+                        res.render('report', {
+                            title: 'รายงานสรุป',
+                            summary: {
+                                value: val ? (val.value || 0) : 0,
+                                inventory: inv ? (inv.total || 0) : 0,
+                                logs: logs ? logs.count : 0
+                            },
+                            barData,
+                            pieData,
+                            currentRoute: '/report'
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 app.listen(port, () => console.log(`Server is running at http://localhost:${port}`));
