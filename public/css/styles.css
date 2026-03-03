@@ -26,7 +26,7 @@ body {
     left: 0;
     transition: all 0.3s ease;
     z-index: 1050;
-    overflow-x: hidden;
+    overflow: visible;
 }
 
 .sidebar .brand-logo {
@@ -111,6 +111,15 @@ body {
     font-size: 1.3rem;
 }
 
+.cursor-pointer:hover {
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+}
+
+.avatar-sm img {
+    object-fit: cover;
+}
+
 .main-content {
     margin-left: var(--sidebar-width);
     min-height: 100vh;
@@ -182,4 +191,73 @@ body {
 .dropdown-item i {
     font-size: 1.1rem;
     vertical-align: middle;
+}
+
+/* การตั้งค่า Animation สำหรับรายการข้อมูล */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ปรับแต่ง User Card */
+.user-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    border: none;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+.avatar-wrapper .rounded-circle {
+    transition: background-color 0.3s ease;
+}
+
+.user-card:hover .avatar-wrapper .rounded-circle {
+    background-color: #e0e7ff !important; /* สีฟ้าอ่อนขึ้นเมื่อ hover */
+}
+
+/* ปรับแต่ง Modal ให้สมดุลกับพื้นที่ทำงานด้านขวา */
+@media (min-width: 992px) {
+    .modal-dialog-centered {
+        /* ขยับ Modal ให้สมดุล โดยเผื่อที่ให้ Sidebar (ปกติ 250px) */
+        margin-left: calc(250px + auto);
+        margin-right: auto;
+    }
+}
+
+/* ปรับแต่งฟอร์มใน Modal */
+.modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.modal-body .form-control, 
+.modal-body .form-select {
+    padding: 10px 15px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.modal-body .form-control:focus, 
+.modal-body .form-select:focus {
+    background-color: #fff;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+}
+
+/* Badge สีพาสเทล */
+.badge.rounded-pill {
+    font-weight: 500;
+    padding: 0.5em 1.2em;
 }

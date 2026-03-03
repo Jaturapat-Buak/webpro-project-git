@@ -1,6 +1,7 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const session = require('express-session');
 
 const app = express();
 const port = 3000;
@@ -9,6 +10,12 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'gearhub_secret_key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 }
+}));
 
 const dbPath = path.join(__dirname, 'hardwarehouse.db');
 let db = new sqlite3.Database(dbPath, (err) => {
@@ -16,6 +23,26 @@ let db = new sqlite3.Database(dbPath, (err) => {
     else { console.log('Connected to database.');
     }
 });
+
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    next();
+});
+
+const isAuthenticated = (req, res, next) => {
+    if (req.session.user) return next();
+    res.redirect('/login');
+};
+
+const authorize = (roles = []) => {
+    return (req, res, next) => {
+        if (!req.session.user) return res.redirect('/login');
+        if (roles.length && !roles.includes(req.session.user.role)) {
+            return res.status(403).send("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
+        }
+        next();
+    };
+};
 
 function logTransaction(productId, type, qty, note) {
 db.get("SELECT MAX(transaction_id) as maxId FROM stock_transactions", (err, row) => {
@@ -29,8 +56,37 @@ db.get("SELECT MAX(transaction_id) as maxId FROM stock_transactions", (err, row)
     });
 }
 
+// --- Auth Routes ---
+app.get('/login', (req, res) => {
+    res.render('logins', { title: 'Login', error: null });
+});
+
+app.post('/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    db.get("SELECT * FROM users WHERE username = ? AND password = ?", [username, password], (err, user) => {
+        if (err) return res.status(500).send("Database error");
+        if (user) {
+            req.session.user = user;
+            res.redirect('/');
+        } else {
+            res.render('logins', { title: 'Login', error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+        }
+    });
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Logout Error:", err);
+            return res.redirect('/');
+        }
+        res.clearCookie('gearhub_secret_key');
+        res.redirect('/login');
+    });
+});
+
 // --- หน้า Dashboard พร้อมระบบ ---
-app.get('/', (req, res) => {
+app.get('/', isAuthenticated, (req, res) => {
     const queries = {
         total: "SELECT COUNT(*) as count FROM products",
         received: "SELECT SUM(quantity) as count FROM stock_transactions WHERE transaction_type = 'receive' AND date(transaction_date) = date('now', 'localtime')",
@@ -81,7 +137,7 @@ app.get('/', (req, res) => {
 
 
 // --- หน้า Product (แสดงรายการสินค้า) ---
-app.get('/products', (req, res) => {
+app.get('/products', isAuthenticated, (req, res) => {
     const search = req.query.search || '';
     const categoryId = req.query.category || '';
     db.all("SELECT category_id, category_name FROM categories ORDER BY category_id ASC", [], (err, categories) => {
@@ -101,12 +157,17 @@ app.get('/products', (req, res) => {
 app.post('/add-product', (req, res) => {
     const { name, category_id, stock, price, description } = req.body;
     db.get("SELECT MAX(product_id) as maxId FROM products", (err, row) => {
-        const nextId = (row && row.maxId) ? row.maxId + 1 : 1;
+        const nextProductId = (row && row.maxId) ? row.maxId + 1 : 1;
+
         db.run(`INSERT INTO products (product_id, product_name, category_id, price, description) VALUES (?, ?, ?, ?, ?)`, 
-        [nextId, name, category_id, price, description], function(err) {
-            db.run(`INSERT INTO stock (product_id, warehouse_qty) VALUES (?, ?)`, [nextId, stock], function(err) {
-                logTransaction(nextId, 'add', stock, `เพิ่มสินค้าใหม่: ${name}`);
-                res.redirect('/products');
+        [nextProductId, name, category_id, price, description], function(err) {
+            db.get("SELECT MAX(stock_id) as maxStockId FROM stock", (err, sRow) => {
+                const nextStockId = (sRow && sRow.maxStockId) ? sRow.maxStockId + 1 : 1;
+                db.run(`INSERT INTO stock (stock_id, product_id, warehouse_qty) VALUES (?, ?, ?)`, 
+                [nextStockId, nextProductId, stock], function(err) {
+                    logTransaction(nextProductId, 'add', stock, `เพิ่มสินค้าใหม่: ${name}`);
+                    res.redirect('/products');
+                });
             });
         });
     });
@@ -164,7 +225,7 @@ app.get('/product/edit/:id', (req, res) => {
 
 
 // --- หน้า Receive (รับสินค้าเข้าคลัง) ---
-app.get('/receive', (req, res) => {
+app.get('/receive', isAuthenticated, (req, res) => {
     db.all("SELECT product_id, product_name FROM products ORDER BY product_name ASC", [], (err, products) => {
         res.render('receive', { title: 'รับสินค้าเข้าคลัง', products, currentRoute: '/receive' });
     });
@@ -188,7 +249,7 @@ app.post('/receive-stock', (req, res) => {
 
 
 // --- หน้า Dispatch (เบิกสินค้า) ---
-app.get('/dispatch', (req, res) => {
+app.get('/dispatch', isAuthenticated, (req, res) => {
     db.all(`SELECT p.product_id, p.product_name, s.warehouse_qty 
             FROM products p JOIN stock s ON p.product_id = s.product_id 
             WHERE s.warehouse_qty > 0 ORDER BY p.product_name ASC`, [], (err, products) => {
@@ -212,7 +273,7 @@ app.post('/dispatch-stock', (req, res) => {
 });
 
 // --- หน้า Report (สรุปข้อมูล) ---
-app.get('/report', (req, res) => {
+app.get('/report', isAuthenticated, (req, res) => {
     const queries = {
         totalValue: `SELECT SUM(p.price * s.warehouse_qty) as value 
                      FROM products p JOIN stock s ON p.product_id = s.product_id`,
@@ -250,6 +311,51 @@ app.get('/report', (req, res) => {
                 });
             });
         });
+    });
+});
+
+// --- หน้า Users ---
+app.get('/users', isAuthenticated, (req, res) => {
+    db.all("SELECT * FROM users ORDER BY user_id DESC", [], (err, rows) => {
+        res.render('users', { 
+            title: 'จัดการผู้ใช้งาน', 
+            users: rows || [], 
+            currentRoute: '/users' 
+        });
+    });
+});
+
+app.post('/users/add', (req, res) => {
+    const { username, full_name, role, email, password } = req.body;
+
+    db.get("SELECT MAX(user_id) as maxId FROM users", (err, row) => {
+        const nextId = (row && row.maxId) ? row.maxId + 1 : 1;
+        
+        const sql = `INSERT INTO users (user_id, username, full_name, role, email, password) 
+                     VALUES (?, ?, ?, ?, ?, ?)`;
+        
+        db.run(sql, [nextId, username, full_name, role, email, password], (err) => {
+            if (err) return res.status(500).send("ไม่สามารถเพิ่มผู้ใช้ได้: " + err.message);
+            res.redirect('/users');
+        });
+    });
+});
+
+app.post('/users/edit/:id', (req, res) => {
+    const { username, full_name, role } = req.body;
+    const { id } = req.params;
+    const sql = `UPDATE users SET username = ?, full_name = ?, role = ? WHERE user_id = ?`;
+    
+    db.run(sql, [username, full_name, role, id], (err) => {
+        if (err) return res.status(500).send("ไม่สามารถแก้ไขข้อมูลได้");
+        res.redirect('/users');
+    });
+});
+
+app.get('/users/delete/:id', (req, res) => {
+    const { id } = req.params;
+    db.run("DELETE FROM users WHERE user_id = ?", [id], (err) => {
+        res.redirect('/users');
     });
 });
 

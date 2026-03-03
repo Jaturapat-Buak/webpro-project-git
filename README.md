@@ -1,1 +1,1 @@
-npm i express ejs sqlite3 body-parser
+npm i express ejs sqlite3 body-parser express-session
